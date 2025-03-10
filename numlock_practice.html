@@ -16,7 +16,7 @@
             }
         });
         document.oncontextmenu = () => false;
-                // 检测是否从主页进入
+        // 检测是否从主页进入
         if (document.referrer.indexOf("mainpage.html") === -1 && !sessionStorage.getItem('validAccess')) {
             window.location.replace("mainpage.html"); // 强制跳转主页
         }
