@@ -16,12 +16,11 @@
             }
         });
         document.oncontextmenu = () => false;
-        // 判断是否从主页跳转或携带标记
-        if (!sessionStorage.getItem('validAccess') && document.referrer.indexOf('index.html') === -1) {
-            window.location.replace('index.html'); // 强制跳转主页[2,5](@ref)
-        }
-        // 清除临时标记
-        sessionStorage.removeItem('validAccess');
+        // 检测是否从主页进入
+if(document.referrer.indexOf("index.html") === -1 && !sessionStorage.getItem('validAccess')){
+    window.location.replace("index.html"); // 强制跳转主页
+}
+sessionStorage.removeItem('validAccess'); // 清除标记
     </script>
     <style>
         body {
@@ -110,7 +109,7 @@
         <button id="restartBtn">重新开始</button>
     </div>
     <div id="practiceArea"></div>
-    <div id="copyright">恒信农商银行 · 胡宇 开发</div>
+    <div id="copyright">Designed and developed by 胡宇</div>
 
     <script>
         // 汉字生成配置
