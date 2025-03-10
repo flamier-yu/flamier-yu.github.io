@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小键盘自由练习系统</title>
+    <!-- 在小键盘和五笔练习页面头部添加 -->
+    <script>
+        /* 基础防护代码 */
+        document.addEventListener('keydown', e => {
+            if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && e.keyCode === 73)) {
+                e.preventDefault();
+                alert('开发者工具已禁用');
+                window.location.reload();
+            }
+        });
+        document.oncontextmenu = () => false;
+        // 判断是否从主页跳转或携带标记
+        if (!sessionStorage.getItem('validAccess') && document.referrer.indexOf('index.html') === -1) {
+            window.location.replace('index.html'); // 强制跳转主页[2,5](@ref)
+        }
+        // 清除临时标记
+        sessionStorage.removeItem('validAccess');
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            min-width: 1400px;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            justify-content: center;
+            position: relative;
+            /* 为版权信息定位 */
+        }
+
+        .panel {
+            width: 40%;
+            min-width: 600px;
+            height: 80vh;
+            margin: 10vh 2%;
+            padding: 2rem;
+            border: 3px solid #3498db;
+            border-radius: 15px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #currentNumber {
+            font-size: 4rem;
+            color: #2c3e50;
+            margin: 3rem 0;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        #inputField,
+        #groupInputField {
+            width: 80%;
+            height: 4rem;
+            font-size: 2rem;
+            text-align: center;
+            border: 3px solid #3498db;
+            border-radius: 8px;
+            padding: 0 1rem;
+            margin: 2rem auto;
+            display: block;
+        }
+
+        #stats {
+            font-size: 1.2rem;
+            color: #666;
+            line-height: 2;
+            margin-top: 2rem;
+        }
+
+        #history {
+            height: 60vh;
+            overflow-y: auto;
+            border: 2px solid #eee;
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .history-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .correct {
+            color: #27ae60;
+            background: #e8f6e9;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fdedec;
+        }
+
+        .button-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .control-button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        #startButton {
+            background: #3498db;
+        }
+
+        #restartButton {
+            background: #e67e22;
+            display: none;
+        }
+
+        #startButton:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        #restartButton:hover {
+            background: #d35400;
+            transform: scale(1.05);
+        }
+
+        #groupInputField {
+            display: none;
+        }
+
+        /* 版权信息样式（右下角） */
+        .copyright {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 0.9rem;
+            color: #888;
+            text-align: right;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="button-container">
+        <button id="startButton" class="control-button">开始训练</button>
+        <button id="restartButton" class="control-button">重新训练</button>
+    </div>
+
+    <div class="panel" id="targetPanel">
+        <div id="currentNumber">--.--</div>
+        <div id="stats">
+            剩余时间：<span id="timer">200</span>秒<br>
+            当前组数：<span id="currentGroup">0</span><br>
+            总分：<span id="totalScore">0</span><br>
+            速度：<span id="speed">0</span>字符/分钟
+        </div>
+    </div>
+
+    <div class="panel">
+        <input type="text" id="groupInputField" placeholder="输入组数后按Enter">
+        <input type="text" id="inputField" placeholder="输入数字后按Enter" autofocus disabled>
+        <div id="historyTitle">输入历史（最新20条）：</div>
+        <div id="history"></div>
+    </div>
+
+    <!-- 版权信息（右下角） -->
+    <div class="copyright">
+        恒信农商银行 · 胡宇 开发
+    </div>
+
+    <script>
+        const state = {
+            currentGroup: 0,
+            totalScore: 0,
+            timeLeft: 200,
+            correctCount: 0,
+            startTime: null,
+            numbersQueue: [],
+            history: [],
+            timerId: null,
+            isTraining: false,
+            expectedGroup: 1
+        };
+
+        function generateNumbers() {
+            const numbers = [];
+            const digitConfigs = [
+                { digits: 7, count: 4 },
+                { digits: 6, count: 4 },
+                { digits: 5, count: 4 },
+                { digits: 4, count: 4 },
+                { digits: 3, count: 4 }
+            ];
+
+            digitConfigs.forEach(config => {
+                for (let i = 0; i < config.count; i++) {
+                    const intDigits = config.digits - 3;
+                    const min = Math.pow(10, intDigits - 1);
+                    const max = Math.pow(10, intDigits) - 1;
+                    const intPart = Math.floor(min + Math.random() * (max - min));
+                    const decimalPart = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+                    numbers.push(`${intPart}.${decimalPart}`);
+                }
+            });
+            return numbers.sort(() => Math.random() - 0.5);
+        }
+
+        function startTraining() {
+            resetState();
+            state.isTraining = true;
+            document.getElementById('startButton').style.display = 'none';
+            document.getElementById('restartButton').style.display = 'block';
+            document.getElementById('groupInputField').style.display = 'block';
+            document.getElementById('groupInputField').focus();
+            startGlobalTimer();
+        }
+
+        function startGlobalTimer() {
+            state.startTime = Date.now();
+            state.timerId = setInterval(() => {
+                state.timeLeft = 200 - Math.floor((Date.now() - state.startTime) / 1000);
+                document.getElementById('timer').textContent = Math.max(state.timeLeft, 0);
+                const elapsed = (Date.now() - state.startTime) / 1000;
+                document.getElementById('speed').textContent = Math.round((state.correctCount * 60) / elapsed) || 0;
+                if (state.timeLeft <= 0) {
+                    endTraining();
+                    alert("时间到！训练已自动结束");
+                }
+            }, 200);
+        }
+
+        function endTraining() {
+            clearInterval(state.timerId);
+            state.isTraining = false;
+            document.getElementById('inputField').disabled = true;
+            document.getElementById('groupInputField').disabled = true;
+            document.getElementById('restartButton').style.display = 'block';
+        }
+
+        function resetState() {
+            clearInterval(state.timerId);
+            state.currentGroup = 0;
+            state.totalScore = 0;
+            state.timeLeft = 200;
+            state.correctCount = 0;
+            state.startTime = null;
+            state.numbersQueue = [];
+            state.history = [];
+            state.timerId = null;
+            state.isTraining = false;
+            state.expectedGroup = 1;
+            document.getElementById('timer').textContent = state.timeLeft;
+            document.getElementById('inputField').value = '';
+            document.getElementById('groupInputField').value = '';
+            document.getElementById('history').innerHTML = '';
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('currentNumber').textContent = state.numbersQueue[0] ? parseFloat(state.numbersQueue[0]).toFixed(2) : '--.--';
+            document.getElementById('currentGroup').textContent = state.currentGroup;
+            document.getElementById('totalScore').textContent = state.totalScore;
+        }
+
+        function addHistoryEntry(target, input) {
+            const historyDiv = document.getElementById('history');
+            const entry = document.createElement('div');
+            entry.className = `history-item ${input === target ? 'correct' : 'error'}`;
+            entry.textContent = `目标：${target} | 输入：${input}`;
+            state.history.unshift(entry);
+            if (state.history.length > 20) state.history.pop();
+            historyDiv.innerHTML = '';
+            state.history.forEach(item => historyDiv.appendChild(item.cloneNode(true)));
+        }
+
+        document.getElementById('startButton').addEventListener('click', startTraining);
+
+        document.getElementById('restartButton').addEventListener('click', function () {
+            if (confirm("确定要重新开始训练吗？当前进度将会丢失！")) {
+                startTraining();
+            }
+        });
+
+        document.getElementById('groupInputField').addEventListener('input', function (e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        document.getElementById('groupInputField').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const inputGroup = parseInt(this.value);
+                if (inputGroup === state.expectedGroup) {
+                    state.currentGroup = inputGroup;
+                    state.expectedGroup++;
+                    state.numbersQueue = generateNumbers();
+                    document.getElementById('groupInputField').style.display = 'none';
+                    document.getElementById('inputField').disabled = false;
+                    document.getElementById('inputField').focus();
+                    updateUI();
+                } else {
+                    alert(`请输入正确的组数：${state.expectedGroup}`);
+                }
+                this.value = '';
+            }
+        });
+
+        document.getElementById('inputField').addEventListener('input', function (e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);
+        });
+
+        document.getElementById('inputField').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && state.isTraining) {
+                const rawInput = this.value;
+                if (rawInput.length < 2) {
+                    alert("至少需要输入2位数字（如23→0.23）");
+                    return;
+                }
+                const decimalPart = rawInput.slice(-2).padEnd(2, '0');
+                const intPart = rawInput.slice(0, -2).replace(/^0+/, '') || '0';
+                const formattedInput = `${intPart}.${decimalPart}`;
+                const target = state.numbersQueue[0];
+                addHistoryEntry(target, formattedInput);
+                if (formattedInput === target) {
+                    state.totalScore++;
+                    state.correctCount++;
+                }
+                state.numbersQueue.shift();
+                if (state.numbersQueue.length === 0) {
+                    document.getElementById('groupInputField').style.display = 'block';
+                    document.getElementById('groupInputField').focus();
+                    document.getElementById('inputField').disabled = true;
+                }
+                updateUI();
+                this.value = '';
+            }
+        });
+    </script>
+</body>
+
+</html>

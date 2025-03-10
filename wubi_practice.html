@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>五笔技能练习系统</title>
+    <!-- 在小键盘和五笔练习页面头部添加 -->
+    <script>
+
+        /* 基础防护代码 */
+        document.addEventListener('keydown', e => {
+            if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && e.keyCode === 73)) {
+                e.preventDefault();
+                alert('开发者工具已禁用');
+                window.location.reload();
+            }
+        });
+        document.oncontextmenu = () => false;
+        // 判断是否从主页跳转或携带标记
+        if (!sessionStorage.getItem('validAccess') && document.referrer.indexOf('index.html') === -1) {
+            window.location.replace('index.html'); // 强制跳转主页[2,5](@ref)
+        }
+        // 清除临时标记
+        sessionStorage.removeItem('validAccess');
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            position: relative;
+            /* 用于定位版权信息 */
+        }
+
+        #statusBar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 18px
+        }
+
+        .char-row {
+            display: flex;
+            margin-bottom: 0
+        }
+
+        .char-box {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            margin: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .input-box {
+            width: 50px;
+            height: 50px;
+            margin: 2px;
+            text-align: center;
+            box-sizing: border-box;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        #startBtn,
+        #restartBtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            /* 按钮间距 */
+        }
+
+        .correct {
+            background-color: #dfffdf
+        }
+
+        .error {
+            background-color: #ffe6e6
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px
+        }
+
+        #copyright {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="statusBar">
+        <span>剩余时间：<span id="timer">200</span>秒</span>
+        <span>得分：<span id="score">0</span>分</span>
+        <span>速度：<span id="speed">0</span>字/分钟</span>
+    </div>
+    <div>
+        <button id="startBtn">开始训练</button>
+        <button id="restartBtn">重新开始</button>
+    </div>
+    <div id="practiceArea"></div>
+    <div id="copyright">恒信农商银行 · 胡宇 开发</div>
+
+    <script>
+        // 汉字生成配置
+        const commonChars = '的一是在了不和有大这主中人上为们地个用工时要动国产以我到他会作来分生对于学下级就年发后也经对以于用行过说方实度等使下同进面起分定本还样理好点正新主想重前所又应开因长现已组然即变关回很者最但已与两高意将并比从法去自之起年得时样下月就年'; // 900常用字
+        const rareChars = '乜夬氕氘卺甪厾彳亍阝凵冫乇丌乜亓仂仉仈伋伻佤佧佴佾侑俜俦俪俶倥倮偬偻傺僖僦儋'; // 100生僻字
+
+        let currentIndex = 0, score = 0, timerId, startTime;
+
+        function generateChars() {
+            // 按比例生成混合字符（常用字90%，生僻字10%）
+            const chars = [...commonChars.slice(0, 900), ...rareChars.slice(0, 100)]
+                .sort(() => Math.random() - 0.5).join('');
+
+            // 构建练习界面
+            const area = document.getElementById('practiceArea');
+            area.innerHTML = '';
+
+            for (let i = 0; i < 50; i++) {  // 50行x20字=1000字
+                // 创建包含上下两行的容器
+                const container = document.createElement('div');
+                container.className = 'container';
+
+                // 显示汉字行
+                const charRow = document.createElement('div');
+                charRow.className = 'char-row';
+                [...chars.substr(i * 20, 20)].forEach(char => {
+                    const box = document.createElement('div');
+                    box.className = 'char-box';
+                    box.textContent = char;
+                    charRow.appendChild(box);
+                });
+                container.appendChild(charRow);
+
+                // 输入行
+                const inputRow = document.createElement('div');
+                inputRow.className = 'char-row';
+                [...Array(20)].forEach((_, j) => {
+                    const input = document.createElement('input');
+                    input.maxLength = 1;
+                    input.className = 'input-box';
+                    input.dataset.index = i * 20 + j;
+                    input.addEventListener('input', handleInput);
+                    input.addEventListener('keydown', handleKeyDown);
+                    inputRow.appendChild(input);
+                });
+                container.appendChild(inputRow);
+
+                area.appendChild(container);
+            }
+        }
+
+        function handleKeyDown(e) {
+            // 阻止空格键的默认行为
+            if (e.key === ' ') {
+                e.preventDefault();
+                return;
+            }
+
+            // 处理删除键
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                const currentInput = e.target;
+                const currentIndex = parseInt(currentInput.dataset.index);
+
+                // 清除当前输入框内容
+                currentInput.value = '';
+                currentInput.classList.remove('correct', 'error');
+
+                // 如果当前不是第一个输入框，则跳转到上一个输入框
+                if (currentIndex > 0) {
+                    const prevInput = document.querySelector(`[data-index="${currentIndex - 1}"]`);
+                    prevInput.focus();
+                }
+            }
+        }
+
+        function handleInput(e) {
+            const input = e.target;
+            const targetChar = document.querySelector(`.char-box:nth-child(${Number(input.dataset.index) % 20 + 1})`).textContent;
+
+            // 解决拼音输入问题：等待输入完成
+            if (input.value.length === 0 || !/^[\u4e00-\u9fa5]$/.test(input.value)) {
+                // 如果输入了空格，直接清除
+                if (input.value === ' ') {
+                    input.value = '';
+                }
+                return;
+            }
+
+            // 实时校验
+            if (input.value === targetChar) {
+                input.classList.add('correct');
+                input.classList.remove('error');
+                score++;
+                document.getElementById('score').textContent = score;
+            } else {
+                input.classList.add('error');
+                input.classList.remove('correct');
+            }
+
+            // 只要输入有效汉字就跳转
+            const nextIndex = parseInt(input.dataset.index) + 1;
+            if (nextIndex < 1000) {
+                const nextInput = document.querySelector(`[data-index="${nextIndex}"]`);
+                nextInput.focus();
+                // 自动滚动确保可见
+                nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // 实时速度计算
+            const elapsed = (Date.now() - startTime) / 1000;
+            document.getElementById('speed').textContent = Math.round((currentIndex + 1) / elapsed * 60);
+        }
+
+        function startPractice() {
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('restartBtn').disabled = false;
+            generateChars();
+            startTime = Date.now();
+            currentIndex = score = 0;
+
+            // 启动倒计时
+            let timeLeft = 200;
+            timerId = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    alert(`考核结束！最终得分：${score}`);
+                    document.getElementById('startBtn').disabled = false;
+                }
+            }, 1000);
+
+            // 聚焦第一个输入框
+            document.querySelector('[data-index="0"]').focus();
+        }
+
+        function restartPractice() {
+            if (confirm('确定要重新开始吗？当前进度将丢失！')) {
+                clearInterval(timerId); // 清除计时器
+                startPractice(); // 重新开始训练
+            }
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startPractice);
+        document.getElementById('restartBtn').addEventListener('click', restartPractice);
+    </script>
+</body>
+
+</html>

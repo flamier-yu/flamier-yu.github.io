@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>银行从业技能练习</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .container {
+            text-align: center;
+            transform: translateY(-10%);
+            /* 微调垂直位置 */
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 2em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .practice-btn {
+            padding: 20px 40px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .practice-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .practice-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.5s ease;
+        }
+
+        .practice-btn:active::after {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0;
+        }
+
+        .copyright {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        /* 新增使用统计样式 */
+        .usage-stats {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        /* 模态框样式 */
+        .modal-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: scale(0.8);
+            animation: zoomIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>银行从业技能练习系统</h1>
+        <div class="btn-group">
+            <button class="practice-btn" onclick="redirectWithValidation('numlock_practice.html')">小键盘自由练习系统</button>
+            <button class="practice-btn" onclick="redirectWithValidation('wubi_practice.html')">五笔技能练习系统</button>
+            <button class="practice-btn" onclick="showModal()">使用提示</button>
+        </div>
+    </div>
+
+    <!-- 新增使用统计 -->
+    <div class="usage-stats">
+        截止到2025/3/10，本系统累计使用人数为100次
+    </div>
+
+    <div class="copyright">恒信农商银行 · 胡宇 开发</div>
+
+    <!-- 模态框 -->
+    <div class="modal-mask" id="modal" onclick="hideModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom: 15px; color: #2c3e50;">系统使用说明</h3>
+            <p style="line-height: 1.6; color: #7f8c8d;">
+                感谢大家使用这款技能练习软件！<br><br>
+                本软件是我在工作中总结提炼的实用工具，旨在帮助各位同事随时随地进行技能训练。<br><br>
+                希望大家通过系统的训练，全面提升业务能力，在考核中取得优异成绩！<br><br>
+                🚀 预祝各位同事人人都能达到一级水平，加油！
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function showModal() {
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function hideModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function redirectWithValidation(url) {
+            sessionStorage.setItem('validAccess', 'true'); // 设置临时验证标记[6](@ref)
+            window.location.href = url;
+        }
+
+        // 点击ESC关闭模态框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideModal();
+        });
+    </script>
+</body>
+
+</html>
