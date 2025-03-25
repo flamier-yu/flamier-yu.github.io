@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幸运轮盘</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+
+        .wheel-container {
+            text-align: center;
+        }
+
+        .wheel {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto;
+            transform: rotate(0deg);
+            transition: transform 0.1s linear;
+            border: 5px solid #333;
+        }
+
+        .slice {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 50%, 100% 0, 100% 100%);
+            transform-origin: 50% 50%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            padding-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        .btn {
+            margin: 5px;
+        }
+
+        .modal-content {
+            font-size: 2rem;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wheel-container">
+        <div style="font-size: 60px">幸运轮盘</div>
+        <div class="wheel" id="wheel">
+            <!-- 轮盘切片将动态生成 -->
+        </div>
+        <div class="button-container">
+            <button id="spinButton" class="btn btn-primary"><i class="fas fa-sync-alt"></i> 开始旋转</button>
+            <button id="stopButton" class="btn btn-danger" disabled><i class="fas fa-stop"></i> 停止</button>
+        </div>
+    </div>
+
+    <!-- 自定义模态框 -->
+    <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultModalLabel">恭喜你！</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="winnerName">
+                    <!-- 这里显示中奖者名字 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const names = ["许周润", "张波浪", "丁祯瑶", "叶锦逸", "陆遥", "陈增瑞", "余欣怡", "魏菲菲", "彭超", "吴登彬", "宋晴", "刘家诚", "叶倩雯", "吴雨欣", "裘陈滔", "马玉婷", "王高洁", "谢梓忻", "冯语晴", "马海涛", "王盼", "朱一凡", "张佳杰", "胡宇", "周启航", "许舒欣", "杨晨", "诸子怡", "吴海娟", "杨鹏强", "王泓超", "沈嘉依", "周家钰", "姚欣燕", "丁乐恒", "王铭全", "皇甫子涵", "韩婕", "黄菲", "尤志斌", "张盈飞", "于鑫海", "许远", "孙雯", "张哲", "陈淑怡"]
+            ; // 可以修改为你的名字数组
+        const wheel = document.getElementById('wheel');
+        const spinButton = document.getElementById('spinButton');
+        const stopButton = document.getElementById('stopButton');
+        const winnerName = document.getElementById('winnerName');
+        const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+        let isSpinning = false;
+        let currentRotation = 0;
+        let spinInterval;
+
+        // 生成轮盘切片
+        function generateWheelSlices() {
+            const sliceCount = names.length;
+            const sliceAngle = 360 / sliceCount;
+            wheel.innerHTML = ''; // 清空之前的切片
+
+            names.forEach((name, index) => {
+                const slice = document.createElement('div');
+                slice.classList.add('slice');
+                slice.style.backgroundColor = `hsl(${(index * sliceAngle) % 360}, 70%, 70%)`;
+                slice.style.transform = `rotate(${index * sliceAngle}deg)`;
+                slice.textContent = name;
+                wheel.appendChild(slice);
+            });
+        }
+
+        // 开始旋转
+        function startSpin() {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinButton.disabled = true;
+            stopButton.disabled = false;
+
+            spinInterval = setInterval(() => {
+                currentRotation += 10; // 每次旋转 10 度
+                wheel.style.transform = `rotate(${currentRotation}deg)`;
+            }, 50); // 每 50 毫秒旋转一次
+        }
+
+        // 停止旋转
+        function stopSpin() {
+            if (!isSpinning) return;
+            clearInterval(spinInterval);
+            isSpinning = false;
+            spinButton.disabled = false;
+            stopButton.disabled = true;
+
+            const finalAngle = currentRotation % 360;
+            const sliceIndex = Math.floor(finalAngle / (360 / names.length));
+            const winner = names[sliceIndex];
+            winnerName.textContent = winner; // 设置中奖者名字
+            resultModal.show(); // 显示模态框
+        }
+
+        // 初始化轮盘
+        generateWheelSlices();
+
+        // 绑定按钮点击事件
+        spinButton.addEventListener('click', startSpin);
+        stopButton.addEventListener('click', stopSpin);
+    </script>
+</body>
+
+</html>
