@@ -5,7 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>幸运轮盘</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        /* 基础防护代码 */
+        document.addEventListener('keydown', e => {
+            if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && e.keyCode === 73)) {
+                e.preventDefault();
+                alert('开发者工具已禁用');
+                window.location.reload();
+            }
+        });
+    </script>
+    <!-- Cloudflare -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- UNPKG -->
+    <link href="https://unpkg.com/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         body {
@@ -62,6 +77,14 @@
             text-align: center;
             padding: 20px;
         }
+
+        #copyright {
+            position: fixed;
+            /* bottom: 10px;
+            right: 10px; */
+            font-size: 14px;
+            color: #666;
+        }
     </style>
 </head>
 
@@ -75,6 +98,7 @@
             <button id="spinButton" class="btn btn-primary"><i class="fas fa-sync-alt"></i> 开始旋转</button>
             <button id="stopButton" class="btn btn-danger" disabled><i class="fas fa-stop"></i> 停止</button>
         </div>
+        <div id="copyright">Designed and developed by 胡宇</div>
     </div>
 
     <!-- 自定义模态框 -->
@@ -95,10 +119,11 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 或 BootCDN（国内推荐） -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
     <script>
-        const names = ["许周润", "张波浪", "丁祯瑶", "叶锦逸", "陆遥", "陈增瑞", "余欣怡", "魏菲菲", "彭超", "吴登彬", "宋晴", "刘家诚", "叶倩雯", "吴雨欣", "裘陈滔", "马玉婷", "王高洁", "谢梓忻", "冯语晴", "马海涛", "王盼", "朱一凡", "张佳杰", "胡宇", "周启航", "许舒欣", "杨晨", "诸子怡", "吴海娟", "杨鹏强", "王泓超", "沈嘉依", "周家钰", "姚欣燕", "丁乐恒", "王铭全", "皇甫子涵", "韩婕", "黄菲", "尤志斌", "张盈飞", "于鑫海", "许远", "孙雯", "张哲", "陈淑怡"]
-            ; // 可以修改为你的名字数组
+        const names = ["许周润", "张波浪", "丁祯瑶", "叶锦逸", "陆遥", "陈增瑞", "余欣怡", "魏菲菲", "彭超", "吴登彬", "宋晴", "刘家诚", "叶倩雯", "吴雨欣", "裘陈滔", "马玉婷", "王高洁", "谢梓忻", "冯语晴", "马海涛", "王盼", "朱一凡", "张佳杰", "胡宇", "周启航", "许舒欣", "杨晨", "诸子怡", "吴海娟", "杨鹏强", "王泓超", "沈嘉依", "周家钰", "姚欣燕", "丁乐恒", "王铭全", "皇甫子涵", "韩婕", "黄菲", "尤志斌", "张盈飞", "于鑫海", "许远", "孙雯", "张哲", "陈淑怡"]; // 可以修改为你的名字数组
         const wheel = document.getElementById('wheel');
         const spinButton = document.getElementById('spinButton');
         const stopButton = document.getElementById('stopButton');
