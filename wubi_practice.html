@@ -187,7 +187,10 @@
 
         function handleInput(e) {
             const input = e.target;
-            const targetChar = document.querySelector(`.char-box:nth-child(${Number(input.dataset.index) % 20 + 1})`).textContent;
+
+            const rowIndex = Math.floor(Number(input.dataset.index) / 20);
+            const colIndex = Number(input.dataset.index) % 20;
+            const targetChar = document.querySelectorAll('.char-row')[rowIndex * 2].children[colIndex].textContent;
 
             // 解决拼音输入问题：等待输入完成
             if (input.value.length === 0 || !/^[\u4e00-\u9fa5]$/.test(input.value)) {
