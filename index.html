@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信息提交页面</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #1890ff;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #303133;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #40a9ff;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            display: none;
+        }
+        
+        .success {
+            display: block;
+            border-left: 4px solid #52c41a;
+            background: #f6ffed;
+        }
+        
+        .error {
+            display: block;
+            border-left: 4px solid #ff4d4f;
+            background: #fff2f0;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .result-title svg {
+            margin-right: 8px;
+        }
+        
+        .result-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(24, 144, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #1890ff;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #8c8c8c;
+            font-size: 12px;
+            border-top: 1px solid #e8e8e8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>信息提交系统</h1>
+            <p>填写并提交信息到腾讯云函数</p>
+        </div>
+        
+        <div class="form-container">
+            <form id="submitForm">
+                <div class="form-group">
+                    <label for="submit_name">上传人姓名</label>
+                    <input type="text" id="submit_name" name="submit_name" class="form-control" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="submit_thing">上传内容</label>
+                    <input type="text" id="submit_thing" name="submit_thing" class="form-control" placeholder="请输入要上传的内容" required>
+                </div>
+                
+                <button type="submit" class="btn">提交信息</button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 10px;">正在提交，请稍候...</p>
+            </div>
+            
+            <div class="result-container" id="resultContainer">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 腾讯云函数调用示例 | 前端界面</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('submitForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // 获取表单数据
+            const submitName = document.getElementById('submit_name').value.trim();
+            const submitThing = document.getElementById('submit_thing').value.trim();
+            
+            // 显示加载中
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+            
+            try {
+                // 准备请求数据
+                const requestData = {
+                    submit_name: submitName,
+                    submit_thing: submitThing
+                };
+                
+                // 此处需要替换为你的实际云函数URL
+                const cloudFunctionURL = 'https://1305334792-kj65jng8ia.ap-shanghai.tencentscf.com/api/submit'; // 请替换为你的实际云函数URL
+                
+                // 发送POST请求到云函数
+                const response = await fetch(cloudFunctionURL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                // 检查响应是否成功
+                if (!response.ok) {
+                    throw new Error(`网络响应错误: ${response.status}`);
+                }
+                
+                // 解析响应数据
+                const data = await response.json();
+                
+                // 显示成功结果
+                showResult('success', '提交成功！', `您的信息已成功提交到云函数。响应结果: ${JSON.stringify(data)}`);
+                
+            } catch (error) {
+                // 显示错误信息
+                console.error('提交出错:', error);
+                showResult('error', '提交失败', `错误信息: ${error.message || '未知错误'}`);
+            } finally {
+                // 隐藏加载中
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        // 显示结果的函数
+        function showResult(type, title, content) {
+            const container = document.getElementById('resultContainer');
+            const titleElement = document.getElementById('resultTitle');
+            const contentElement = document.getElementById('resultContent');
+            
+            // 移除所有可能存在的类
+            container.classList.remove('success', 'error');
+            
+            // 根据类型添加相应的类
+            container.classList.add(type);
+            
+            // 设置标题和内容
+            titleElement.textContent = title;
+            contentElement.textContent = content;
+            
+            // 显示结果容器
+            container.style.display = 'block';
+            
+            // 平滑滚动到结果区域
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
